@@ -1,12 +1,11 @@
 {
   "name": "maestro-mcp",
-  "version": "0.1.0",
-  "description": "MCP server for Maestro mobile testing - control iOS/Android apps with 47+ automation tools",
+  "version": "2.0.0",
+  "description": "MCP server for Maestro mobile testing + ADB toolkit - Playwright-style control for iOS/Android apps",
   "author": {
-    "name": "mikeb",
-    "email": "mikeb@example.com"
+    "name": "slapglif"
   },
-  "repository": "https://github.com/mikeb/maestro-mcp",
-  "keywords": ["maestro", "mobile", "testing", "ios", "android", "automation", "mcp"],
+  "repository": "https://github.com/slapglif/maestro-mcp",
+  "keywords": ["maestro", "mobile", "testing", "ios", "android", "automation", "mcp", "adb", "playwright"],
   "license": "MIT"
 }

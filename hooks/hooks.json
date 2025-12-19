@@ -1,0 +1,16 @@
+{
+  "description": "Maestro MCP visual inspector hooks for design system context injection",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/visual_inspector_context_hook.py"
+          }
+        ],
+        "matcher": "maestro_capture_screen|maestro_hierarchy|maestro_focus_region"
+      }
+    ]
+  }
+}
