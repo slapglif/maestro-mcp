@@ -1,0 +1,223 @@
+appId: com.example.ecommerce
+---
+# End-to-End E-Commerce Test
+# Complete user journey: browse, add to cart, checkout
+
+# Setup: Launch with clean state
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+
+# Wait for launch
+- waitForAnimationToEnd
+
+# Seed test data via API
+- httpRequest:
+    url: "${API_URL}/test/seed"
+    method: POST
+    headers:
+      Authorization: "Bearer ${ADMIN_TOKEN}"
+    body: |
+      {
+        "products": ["TEST_PRODUCT_1", "TEST_PRODUCT_2"],
+        "user": "${TEST_USER_EMAIL}"
+      }
+
+# Verify API response
+- assertTrue: "${output.response.statusCode == 200}"
+
+# Login (reuse login flow)
+- runFlow:
+    when:
+      visible: "Login"
+    file: login-flow.yaml
+
+# Navigate to products
+- tapOn:
+    accessibilityLabel: "Products Tab"
+
+- waitForAnimationToEnd
+
+# Search for product
+- tapOn:
+    id: "search_bar"
+
+- inputText: "laptop"
+
+- pressKey: Enter
+
+# Wait for search results
+- extendedWaitUntil:
+    visible: "Search Results"
+    timeout: 5000
+
+# Scroll to find specific product
+- scrollUntilVisible:
+    element:
+      text: "MacBook Pro"
+    timeout: 10000
+
+# Tap on product
+- tapOn:
+    text: "MacBook Pro"
+
+- waitForAnimationToEnd
+
+# Verify product details loaded
+- assertVisible:
+    id: "product_title"
+
+- assertVisible:
+    id: "product_price"
+
+# Take screenshot of product
+- takeScreenshot: screenshots/product-detail.png
+
+# Add to cart
+- retry:
+    maxAttempts: 3
+    commands:
+      - tapOn:
+          id: "add_to_cart_button"
+      - assertVisible:
+          text: "Added to cart"
+          timeout: 3000
+
+# Wait for success message to disappear
+- extendedWaitUntil:
+    notVisible: "Added to cart"
+    timeout: 5000
+
+# Navigate to cart
+- tapOn:
+    accessibilityLabel: "Cart"
+
+- waitForAnimationToEnd
+
+# Verify product in cart
+- assertVisible:
+    text: "MacBook Pro"
+
+# Verify cart item count
+- assertVisible:
+    text: "1 item"
+
+# Copy product price for later verification
+- copyTextFrom:
+    id: "cart_total"
+
+# Store price in variable
+- evalScript: |
+    output.cartTotal = output.text.replace('$', '');
+
+# Proceed to checkout
+- tapOn:
+    id: "checkout_button"
+
+- waitForAnimationToEnd
+
+# Verify checkout screen
+- assertVisible:
+    text: "Checkout"
+
+# Fill shipping information
+- tapOn:
+    id: "address_input"
+- inputText: "${SHIPPING_ADDRESS}"
+
+- tapOn:
+    id: "city_input"
+- inputText: "${SHIPPING_CITY}"
+
+- tapOn:
+    id: "zip_input"
+- inputText: "${SHIPPING_ZIP}"
+
+# Hide keyboard
+- hideKeyboard
+
+# Scroll to payment section
+- scroll
+
+# Fill payment information
+- tapOn:
+    id: "card_number_input"
+- inputText: "4242424242424242"  # Test card
+
+- tapOn:
+    id: "card_expiry_input"
+- inputText: "1225"  # 12/25
+
+- tapOn:
+    id: "card_cvc_input"
+- inputText: "123"
+
+- hideKeyboard
+
+# Take screenshot before order
+- takeScreenshot: screenshots/checkout-ready.png
+
+# Review order total
+- assertVisible:
+    text: "$${output.cartTotal}"
+
+# Place order
+- tapOn:
+    id: "place_order_button"
+
+# Wait for order processing
+- extendedWaitUntil:
+    visible:
+      text: "Order Confirmed"
+    timeout: 30000
+
+# Verify success screen
+- assertVisible:
+    id: "order_confirmation"
+
+# Copy order number
+- copyTextFrom:
+    id: "order_number"
+
+# Store order number
+- evalScript: |
+    output.orderNumber = output.text;
+    console.log("Order number: " + output.orderNumber);
+
+# Take final screenshot
+- takeScreenshot: screenshots/order-success.png
+
+# Verify order via API
+- httpRequest:
+    url: "${API_URL}/orders/${output.orderNumber}"
+    method: GET
+    headers:
+      Authorization: "Bearer ${USER_TOKEN}"
+
+- assertTrue: "${output.response.statusCode == 200}"
+
+# Parse and verify order data
+- evalScript: |
+    var order = JSON.parse(output.response.body);
+    output.orderStatus = order.status;
+    output.orderTotal = order.total;
+
+- assertTrue:
+    condition: "${output.orderStatus} == 'confirmed'"
+    label: "Order status should be confirmed"
+
+- assertTrue:
+    condition: "${output.orderTotal} == ${output.cartTotal}"
+    label: "Order total should match cart total"
+
+# Cleanup: Delete test order via API
+- httpRequest:
+    url: "${API_URL}/test/cleanup"
+    method: POST
+    headers:
+      Authorization: "Bearer ${ADMIN_TOKEN}"
+    body: |
+      {
+        "orderNumber": "${output.orderNumber}"
+      }

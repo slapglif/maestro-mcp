@@ -1,0 +1,68 @@
+appId: com.example.app
+---
+# Login Flow Example
+# Demonstrates form interaction, assertions, and error handling
+
+# Launch app with clean state
+- launchApp:
+    clearState: true
+    permissions:
+      all: allow
+
+# Wait for app to load
+- waitForAnimationToEnd
+
+# Dismiss onboarding if shown (optional)
+- tapOn:
+    text: "Skip Tutorial"
+    optional: true
+
+# Navigate to login screen if needed
+- runFlow:
+    when:
+      visible: "Get Started"
+    commands:
+      - tapOn: "Get Started"
+      - waitForAnimationToEnd
+
+# Verify on login screen
+- assertVisible:
+    text: "Login"
+
+# Fill email field
+- tapOn:
+    id: "email_input"
+- inputText: "${EMAIL}"
+
+# Fill password field
+- tapOn:
+    id: "password_input"
+- inputText: "${PASSWORD}"
+
+# Hide keyboard if present
+- hideKeyboard
+
+# Take screenshot before submission
+- takeScreenshot: screenshots/login-before-submit.png
+
+# Submit login form
+- tapOn:
+    id: "login_button"
+
+# Wait for login processing
+- extendedWaitUntil:
+    notVisible:
+      id: "loading_spinner"
+    timeout: 10000
+
+# Assert successful login
+- assertVisible:
+    text: "Welcome back"
+    timeout: 5000
+
+# Verify we're on home screen
+- assertVisible:
+    id: "home_screen"
+
+# Take screenshot of success
+- takeScreenshot: screenshots/login-success.png

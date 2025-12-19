@@ -1,0 +1,9 @@
+{
+  "maestro": {
+    "command": "node",
+    "args": ["${CLAUDE_PLUGIN_ROOT}/mcp/dist/index.js"],
+    "env": {
+      "MAESTRO_HOME": "${HOME}/.maestro"
+    }
+  }
+}
